@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10-K Financial Analysis API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .endpoint {
+            margin-bottom: 30px;
+        }
+        .method {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .parameter {
+            font-weight: bold;
+        }
+        .note {
+            background-color: #fffde7;
+            padding: 15px;
+            border-left: 4px solid #ffd600;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>10-K Financial Analysis API</h1>
+
+    <p>This is the API backend for the 10-K Financial Analysis application. To use the full application with a user-friendly interface, please use the Vue.js frontend.</p>
+
+    <div class="note">
+        <p><strong>Note:</strong> This API uses AI to extract and analyze financial data from 10-K reports. The accuracy of the analysis depends on the clarity of the financial data in the reports and the AI's extraction capabilities.</p>
+    </div>
+
+    <div class="endpoint">
+        <h2><span class="method">POST</span> /api/analyze</h2>
+        <p>Upload a 10-K PDF file and get comprehensive financial analysis results.</p>
+
+        <h3>Request Parameters (multipart/form-data):</h3>
+        <ul>
+            <li><span class="parameter">file</span> - PDF file (10-K report)</li>
+            <li><span class="parameter">stock_price</span> - Current stock price (optional)</li>
+            <li><span class="parameter">api_choice</span> - API to use for extraction (openrouter or gemini, default: gemini)</li>
+            <li><span class="parameter">analysis_detail</span> - Level of analysis detail (standard or detailed, default: standard)</li>
+        </ul>
+
+        <h3>Response:</h3>
+        <pre>
+{
+  "company_name": "Example Corp.",
+  "fiscal_year": "2022-12-31",
+  "fiscal_period": "Annual",
+
+  "extracted_data": {
+    "revenue": 1000000000,
+    "cogs": 600000000,
+    "gross_profit": 400000000,
+    "operating_expenses": 200000000,
+    "operating_income": 200000000,
+    "interest_expense": 10000000,
+    "net_income": 150000000,
+    "cash_and_equivalents": 100000000,
+    "accounts_receivable": 50000000,
+    "inventory": 75000000,
+    "total_current_assets": 225000000,
+    "ppe": 300000000,
+    "total_assets": 800000000,
+    "accounts_payable": 40000000,
+    "short_term_debt": 25000000,
+    "total_current_liabilities": 100000000,
+    "long_term_debt": 200000000,
+    "total_liabilities": 300000000,
+    "stockholders_equity": 500000000,
+    "outstanding_shares": 100000000,
+    "operating_cash_flow": 180000000,
+    "capex": 50000000,
+    "investing_cash_flow": -70000000,
+    "financing_cash_flow": -50000000,
+    "free_cash_flow": 130000000
+  },
+
+  "ratios": {
+    "eps": 1.5,
+    "pe_ratio": 20,
+    "roe": 30,
+    "roa": 18.75,
+    "net_profit_margin": 15,
+    "gross_profit_margin": 40,
+    "operating_profit_margin": 20,
+    "de_ratio": 0.45,
+    "debt_ratio": 0.38,
+    "interest_coverage": 20,
+    "current_ratio": 2.25,
+    "quick_ratio": 1.5,
+    "fcf_net_income_ratio": 0.87,
+    "pb_ratio": 3.0,
+    "ps_ratio": 2.0
+  },
+
+  "scores": {
+    "pe_ratio": {"score": 2, "interpretation": "Fairly Valued"},
+    "roe": {"score": 3, "interpretation": "Strong"},
+    "roa": {"score": 3, "interpretation": "Strong"},
+    "net_profit_margin": {"score": 3, "interpretation": "Strong"},
+    "gross_profit_margin": {"score": 3, "interpretation": "Strong"},
+    "operating_profit_margin": {"score": 3, "interpretation": "Strong"},
+    "de_ratio": {"score": 3, "interpretation": "Low Leverage"},
+    "debt_ratio": {"score": 2, "interpretation": "Moderate Debt"},
+    "interest_coverage": {"score": 3, "interpretation": "Strong"},
+    "current_ratio": {"score": 3, "interpretation": "Strong"},
+    "quick_ratio": {"score": 3, "interpretation": "Strong"},
+    "fcf_net_income_ratio": {"score": 2, "interpretation": "Acceptable (Reliable earnings)"},
+    "pb_ratio": {"score": 1, "interpretation": "Overvalued"},
+    "ps_ratio": {"score": 2, "interpretation": "Fairly Valued"}
+  },
+
+  "qualitative_summary": {
+    "earnings_quality": "High - Operating cash flow supports or exceeds reported earnings",
+    "balance_sheet": "Very Strong - Low debt levels and strong liquidity",
+    "profitability": "Excellent - High returns on equity and strong profit margins",
+    "mda_highlights": "The company reported strong revenue growth of 15% year-over-year...",
+    "key_risks": ["Competitive pressures", "Supply chain disruptions", "Regulatory changes", "Market volatility", "Technology shifts"]
+  },
+
+  "swot_analysis": {
+    "strengths": [
+      "Strong roe",
+      "Strong net profit margin",
+      "Low leverage",
+      "Strong balance sheet"
+    ],
+    "weaknesses": [
+      "Overvalued by some metrics"
+    ],
+    "opportunities": [
+      "Potential for favorable valuation rerating"
+    ],
+    "threats": [
+      "Competitive pressures",
+      "Market volatility"
+    ]
+  },
+
+  "average_score": 2.64,
+
+  "recommendation": {
+    "action": "Buy",
+    "suitable_for": "Value and Growth Investors",
+    "explanation": "The company demonstrates strong financial health with favorable valuation metrics.",
+    "key_factors": [
+      "Solid profitability indicators",
+      "Healthy balance sheet",
+      "Reasonable valuation",
+      "Strong balance sheet provides financial flexibility"
+    ],
+    "risk_factors": [
+      "Overvalued by some metrics"
+    ],
+    "watch_list": [
+      "Changes in profit margins",
+      "Debt level trends",
+      "Cash flow quality vs. reported earnings",
+      "Industry-specific dynamics"
+    ]
+  }
+}
+        </pre>
+    </div>
+</body>
+</html>
