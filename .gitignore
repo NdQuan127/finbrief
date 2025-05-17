@@ -2,3 +2,4 @@
 .venv/
 .cursor/
 backend/.env
+node_modules/
