@@ -11,13 +11,22 @@ except ImportError:
 
 
 def create_app() -> Flask:
-    """rr
+    """
     Create and configure the Flask application.
     """
     app = Flask(__name__,
                 static_folder='static',
                 template_folder='templates')
-    CORS(app)
+    
+    # Configure CORS to allow requests from frontend
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:8080", "http://127.0.0.1:8080"],
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
+    
     app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 
