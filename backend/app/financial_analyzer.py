@@ -1,16 +1,20 @@
 from .utils import safe_float # Assuming utils.py is in the same directory
+from .llm_clients import interpret_financial_ratios_with_llm, predict_earnings_outlook_with_llm, generate_swot_analysis_with_llm, create_financial_story_with_llm
 
-def calculate_financial_ratios(data: dict, stock_price: str | None = None) -> dict:
+def calculate_financial_ratios(data: dict, stock_price: str | None = None, api_choice: str = "gemini", include_llm_analysis: bool = True) -> dict:
     """
     Calculate financial ratios based on extracted data from financial reports
+    and optionally enhance with LLM-based analysis
 
     Args:
         data (dict): Extracted financial data
         stock_price (str, optional): Current stock price as a string.
                                     Can be None if not provided.
+        api_choice (str): The API to use for LLM analysis (gemini or openrouter)
+        include_llm_analysis (bool): Whether to include LLM-based analysis
 
     Returns:
-        dict: Financial ratios, scores, and recommendations
+        dict: Financial ratios, scores, recommendations, and LLM-based insights
     """
     results = {
         "company_name": data.get("company_name", "Unknown"),
@@ -20,8 +24,16 @@ def calculate_financial_ratios(data: dict, stock_price: str | None = None) -> di
         "ratios": {},
         "scores": {},
         "trend_analysis": {}, # Placeholder for future trend analysis features
-        "qualitative_summary": {}
+        "qualitative_summary": {},
+        "analysis_timestamp": data.get("analysis_timestamp", "")
     }
+
+    # Add new fields for LLM insights
+    if include_llm_analysis:
+        results["llm_ratio_interpretations"] = {}
+        results["llm_earnings_outlook"] = {}
+        results["financial_story"] = {}
+        results["analysis_reasoning_steps"] = {}
 
     # Convert stock_price to float if provided
     _stock_price_float: float | None = None
@@ -229,6 +241,46 @@ def calculate_financial_ratios(data: dict, stock_price: str | None = None) -> di
             else:
                 results["qualitative_summary"]["profitability"] = "Poor - Low returns and thin margins"
 
+        # --- 7. LLM-BASED RATIO INTERPRETATIONS (if enabled) ---
+        if include_llm_analysis:
+            # Get enhanced ratio interpretations from LLM
+            llm_ratio_analysis = interpret_financial_ratios_with_llm(data, results["ratios"], api_choice)
+            
+            # Store the results if successful
+            if llm_ratio_analysis and "error" not in llm_ratio_analysis:
+                # Store all LLM outputs directly
+                if "ratio_interpretations" in llm_ratio_analysis:
+                    results["llm_ratio_interpretations"] = llm_ratio_analysis["ratio_interpretations"]
+                
+                if "overall_ratio_assessment" in llm_ratio_analysis:
+                    results["llm_overall_assessment"] = llm_ratio_analysis["overall_ratio_assessment"]
+                    
+                # Store reasoning steps if available (for transparency)
+                results["analysis_reasoning_steps"]["ratio_analysis"] = llm_ratio_analysis.get("analysis_steps", [])
+                
+                # Use LLM ratio interpretations to enhance scores if available
+                for ratio_key, score_data in results["scores"].items():
+                    llm_interpretation = results["llm_ratio_interpretations"].get(ratio_key, {}).get("interpretation")
+                    if llm_interpretation:
+                        # Update the interpretation from LLM while preserving the score
+                        results["scores"][ratio_key]["llm_interpretation"] = llm_interpretation
+            
+            # Get earnings outlook prediction from LLM
+            llm_outlook_result = predict_earnings_outlook_with_llm(
+                {"preliminary_trend_assessment": "Based on the available financial data."}, 
+                llm_ratio_analysis, 
+                api_choice
+            )
+            
+            if llm_outlook_result and "error" not in llm_outlook_result:
+                results["llm_earnings_outlook"] = {
+                    "direction": llm_outlook_result.get("earnings_prediction_direction"),
+                    "magnitude": llm_outlook_result.get("earnings_prediction_magnitude"),
+                    "confidence": llm_outlook_result.get("prediction_confidence"),
+                    "rationale": llm_outlook_result.get("prediction_rationale")
+                }
+                results["analysis_reasoning_steps"]["earnings_prediction"] = llm_outlook_result.get("key_factors_summary", [])
+
         # Calculate average score and detailed recommendation
         valid_scores = [score_data["score"] for score_data in results["scores"].values() if isinstance(score_data, dict) and "score" in score_data]
         if valid_scores:
@@ -259,6 +311,22 @@ def calculate_financial_ratios(data: dict, stock_price: str | None = None) -> di
 
             if avg_score > 2.5: swot["opportunities"].append("Potential for favorable valuation rerating")
             elif avg_score < 1.5: swot["threats"].append("Continued underperformance may lead to valuation decline")
+
+            # --- 8. LLM-BASED SWOT ANALYSIS (if enabled) ---
+            if include_llm_analysis:
+                mda_summary = results.get("qualitative_summary", {})
+                llm_swot_result = generate_swot_analysis_with_llm(data, results["llm_ratio_interpretations"], mda_summary, api_choice)
+                
+                if llm_swot_result and "error" not in llm_swot_result:
+                    # Use LLM SWOT if available, otherwise use the rule-based one
+                    if "strengths" in llm_swot_result and llm_swot_result["strengths"]:
+                        swot["strengths"] = llm_swot_result["strengths"]
+                    if "weaknesses" in llm_swot_result and llm_swot_result["weaknesses"]:
+                        swot["weaknesses"] = llm_swot_result["weaknesses"]
+                    if "opportunities" in llm_swot_result and llm_swot_result["opportunities"]:
+                        swot["opportunities"] = llm_swot_result["opportunities"]
+                    if "threats" in llm_swot_result and llm_swot_result["threats"]:
+                        swot["threats"] = llm_swot_result["threats"]
 
             recommendation_details = {}
             if avg_score > 2.5:
@@ -296,6 +364,37 @@ def calculate_financial_ratios(data: dict, stock_price: str | None = None) -> di
                 "Changes in profit margins", "Debt level trends",
                 "Cash flow quality vs. reported earnings", "Industry-specific dynamics"
             ]
+            
+            # --- 9. ENHANCE RECOMMENDATION WITH LLM INSIGHTS ---
+            if include_llm_analysis and "llm_earnings_outlook" in results and results["llm_earnings_outlook"].get("rationale"):
+                # Use the earnings prediction rationale to enhance the recommendation explanation
+                earnings_direction = results["llm_earnings_outlook"].get("direction", "").lower()
+                earnings_magnitude = results["llm_earnings_outlook"].get("magnitude", "").lower()
+                rationale_excerpt = results["llm_earnings_outlook"].get("rationale", "")
+                
+                # Add rationale to explanation if available
+                if rationale_excerpt and earnings_direction:
+                    direction_term = "increase" if earnings_direction == "increase" else "decrease" if earnings_direction == "decrease" else "remain stable"
+                    magnitude_term = f"{earnings_magnitude} " if earnings_magnitude else ""
+                    recommendation_details["explanation"] += f" LLM predicts earnings will {magnitude_term}{direction_term} because {rationale_excerpt}"
+            
+            # --- 10. CREATE FINANCIAL STORY NARRATIVES ---
+            if include_llm_analysis:
+                story_result = create_financial_story_with_llm(
+                    results["llm_ratio_interpretations"],
+                    results["llm_earnings_outlook"],
+                    swot,
+                    api_choice
+                )
+                
+                if story_result and "error" not in story_result:
+                    results["financial_story"] = {
+                        "profitability_narrative": story_result.get("profitability_narrative", ""),
+                        "financial_health_narrative": story_result.get("financial_health_narrative", ""),
+                        "future_outlook_narrative": story_result.get("future_outlook_narrative", ""),
+                        "executive_summary": story_result.get("executive_summary", "")
+                    }
+            
             results["recommendation"] = recommendation_details
             results["swot_analysis"] = swot
 
