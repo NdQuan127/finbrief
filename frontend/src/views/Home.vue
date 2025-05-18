@@ -8,6 +8,18 @@
         <strong>Error:</strong> {{ error }}
       </div>
 
+      <div v-if="disclaimer" class="ai-disclaimer">
+        <p><strong>AI Disclaimer:</strong> {{ disclaimer.disclaimer }}</p>
+        <ul v-if="showFullDisclaimer" class="limitations-list">
+          <li v-for="(limitation, index) in disclaimer.limitations" :key="index">
+            {{ limitation }}
+          </li>
+        </ul>
+        <button class="btn-link" @click="showFullDisclaimer = !showFullDisclaimer">
+          {{ showFullDisclaimer ? 'Hide Details' : 'Show Limitations' }}
+        </button>
+      </div>
+
       <form @submit.prevent="uploadFile" enctype="multipart/form-data">
         <fieldset class="form-section">
           <legend class="section-title">1. Report File</legend>
@@ -71,6 +83,14 @@
             </label>
             <small class="input-hint">Overrides detail level for this specific section.</small>
           </div>
+          
+          <div class="form-group checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="includeLlmAnalysis" checked />
+              <span>Include Advanced AI Analysis</span>
+            </label>
+            <small class="input-hint">Uses AI to interpret ratios, predict earnings, and generate narratives.</small>
+          </div>
         </fieldset>
 
         <button type="submit" class="btn btn-primary btn-analyze" :disabled="isLoading">
@@ -108,7 +128,7 @@
           <div class="step-icon">💡</div>
           <div class="step-info">
             <h3>4. Insights</h3>
-            <p>Get recommendations & summaries.</p>
+            <p>Get recommendations & narratives.</p>
           </div>
         </div>
       </div>
@@ -128,8 +148,11 @@ export default {
       apiChoice: 'gemini',
       analysisDetail: 'standard',
       includeMda: false,
+      includeLlmAnalysis: true,
       isLoading: false,
-      error: null
+      error: null,
+      disclaimer: null,
+      showFullDisclaimer: false
     }
   },
   methods: {
@@ -157,6 +180,7 @@ export default {
         formData.append('api_choice', this.apiChoice);
         formData.append('analysis_detail', this.analysisDetail);
         formData.append('include_mda', this.includeMda ? 'true' : 'false');
+        formData.append('include_llm_analysis', this.includeLlmAnalysis ? 'true' : 'false');
 
         const response = await axios.post('http://localhost:5000/api/analyze', formData, {
           headers: {
@@ -172,7 +196,18 @@ export default {
       } finally {
         this.isLoading = false;
       }
+    },
+    async fetchDisclaimer() {
+      try {
+        const response = await axios.get('http://localhost:5000/api/disclaimer');
+        this.disclaimer = response.data;
+      } catch (err) {
+        console.error('Error fetching disclaimer:', err);
+      }
     }
+  },
+  mounted() {
+    this.fetchDisclaimer();
   }
 }
 </script>
@@ -186,6 +221,38 @@ export default {
   margin-bottom: 1.5rem;
   font-size: 1rem;
   color: #333; /* Slightly softer for subtitle */
+}
+
+.ai-disclaimer {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.ai-disclaimer p {
+  margin: 0 0 0.5rem 0;
+}
+
+.limitations-list {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #007bff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: #0056b3;
 }
 
 .upload-card {
