@@ -237,7 +237,7 @@ def _call_gemini_api(prompt: str) -> dict:
     
     try:
         genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
         
         response = model.generate_content(prompt)
         
@@ -654,7 +654,7 @@ def extract_financial_data_directly(pdf_data: Dict[str, Any]) -> dict:
 
     # Configure the Gemini model
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
     
     # Collect relevant content from the PDF
     financial_text = pdf_data.get('financial_sections', '')
